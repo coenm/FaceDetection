@@ -51,7 +51,8 @@
                 }
             }
 
-            var outputFilename = Path.Combine(outputDirectory, $"output_{Name}.jpg");
+            var origFilename = new FileInfo(inputFilename).Name;
+            var outputFilename = Path.Combine(outputDirectory, $"{origFilename}_{Name}.jpg");
 
             Cv2.ImWrite(outputFilename, frame);
 

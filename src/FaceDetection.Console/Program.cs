@@ -1,26 +1,46 @@
-﻿using System.Collections.Generic;
-using Core;
-using FaceDetection.OpenCv;
-
-namespace FaceDetection.Console
+﻿namespace FaceDetection.Console
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Reflection;
+    using Core;
+    using OpenCv;
 
+    public static class Program
+    {
+        public static void Main(string[] args)
+        {
             var algorithms = new List<IFaceDetection>
             {
                 new OpenCvDnnCaffe(),
                 new OpenCvDnnTensorflow(),
             };
 
-            var img = "liverpool.jpg";
+            var codebase = Assembly.GetEntryAssembly()?.GetName().CodeBase;
+            if (codebase == null)
+                return;
+            var location = new Uri(codebase);
 
-            foreach (var algo in algorithms)
+            var dir = new FileInfo(location.AbsolutePath).Directory;
+            if (dir == null)
+                return;
+
+            var outputDir = Path.Combine(dir.FullName, "Output");
+            if (Directory.Exists(outputDir) == false)
+                Directory.CreateDirectory(outputDir);
+
+            var inputDir = Path.Combine(dir.FullName, "images");
+            if (!Directory.Exists(inputDir))
+                return;
+
+            foreach (var img in Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly))
             {
-                var faceCount = algo.Process(img, "samples\\");
-                System.Console.WriteLine($"{algo.Name} found {faceCount} faces");
+                foreach (var algo in algorithms)
+                {
+                    var faceCount = algo.Process(img, outputDir);
+                    System.Console.WriteLine($"{algo.Name} found {faceCount} faces");
+                }
             }
 
             System.Console.WriteLine("Done");
