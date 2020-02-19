@@ -1,4 +1,6 @@
-﻿namespace FaceDetection.Console
+﻿using FaceDetection.DLibDotNet;
+
+namespace FaceDetection.Console
 {
     using System;
     using System.Collections.Generic;
@@ -15,6 +17,7 @@
             {
                 new OpenCvDnnCaffe(),
                 new OpenCvDnnTensorflow(),
+                new DLibHog(),
             };
 
             var codebase = Assembly.GetEntryAssembly()?.GetName().CodeBase;
@@ -41,6 +44,12 @@
                     var faceCount = algo.Process(img, outputDir);
                     System.Console.WriteLine($"{algo.Name} found {faceCount} faces");
                 }
+            }
+
+            foreach (var algo in algorithms)
+            {
+                if (algo is IDisposable disposable)
+                    disposable.Dispose();
             }
 
             System.Console.WriteLine("Done");
