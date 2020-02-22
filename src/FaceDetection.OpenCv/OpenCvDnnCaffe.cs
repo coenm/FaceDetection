@@ -55,7 +55,7 @@
                 list.Add(new ConfidenceBox(new Point(x1, y1), new Point(x2, y2), confidence));
             }
 
-            var orderedFaces = list.OrderByDescending(x => x.Confidence).Where(x => x.Confidence > 0.5).ToList();
+            var orderedFaces = list.OrderByDescending(x => x.Confidence).Where(x => x.Confidence > 0.3).ToList();
             var origFilename = new FileInfo(inputFilename).Name;
 
             var faces = orderedFaces;

@@ -22,7 +22,6 @@
                 throw new FileNotFoundException(nameof(inputFilename));
 
             using var img = Dlib.LoadImage<RgbPixel>(inputFilename);
-
             var faces = detector.Operator(img);
 
             foreach (var rect in faces)

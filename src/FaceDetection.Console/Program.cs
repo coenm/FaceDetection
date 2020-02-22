@@ -1,4 +1,5 @@
-﻿using FaceDetection.DLibDotNet;
+﻿using System.Security.Cryptography.X509Certificates;
+using FaceDetection.DLibDotNet;
 
 namespace FaceDetection.Console
 {
@@ -13,6 +14,9 @@ namespace FaceDetection.Console
     {
         public static void Main(string[] args)
         {
+
+            var identification = new DLibFaceIdentification();
+
             var algorithms = new List<IFaceDetection>
             {
                 new OpenCvDnnCaffe(),
@@ -39,18 +43,24 @@ namespace FaceDetection.Console
 
             foreach (var img in Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly))
             {
-                foreach (var algo in algorithms)
-                {
-                    var faceCount = algo.Process(img, outputDir);
-                    System.Console.WriteLine($"{algo.Name} found {faceCount} faces");
-                }
+                // foreach (var algo in algorithms)
+                // {
+                //     var faceCount = algo.Process(img, outputDir);
+                //     System.Console.WriteLine($"{algo.Name} found {faceCount} faces");
+                // }
             }
+
+
+            identification.Process(Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly));
 
             foreach (var algo in algorithms)
             {
                 if (algo is IDisposable disposable)
                     disposable.Dispose();
             }
+
+            if (identification is IDisposable dis)
+                dis.Dispose();
 
             System.Console.WriteLine("Done");
             System.Console.ReadLine();
