@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CoenM.ExifToolLib;
 using DlibDotNet;
 using DlibDotNet.Dnn;
 using Newtonsoft.Json;
@@ -39,12 +43,13 @@ namespace FaceDetection.DLibDotNet
         public List<MatrixFloatDto> Descriptors { get; set; }
     }
 
-    public class DLibFaceIdentification : IDisposable
+    public class DLibFaceIdentification : IAsyncDisposable
     {
         private FrontalFaceDetector detector;
         private ShapePredictor predictor;
         private LossMetric dnn;
         private RgbPixel[] palette;
+        private AsyncExifTool asyncExifTool;
 
         public DLibFaceIdentification()
         {
@@ -55,6 +60,10 @@ namespace FaceDetection.DLibDotNet
 
             // set up a neural network for face recognition
             dnn = DlibDotNet.Dnn.LossMetric.Deserialize("model/dlib_face_recognition_resnet_model_v1.dat");
+
+            var configuration = new AsyncExifToolConfiguration("exiftool.exe", Encoding.UTF8, Environment.NewLine, new List<string>());
+            asyncExifTool = new AsyncExifTool(configuration);
+            asyncExifTool.Initialize();
 
             // create a color palette for plotting
             palette = new RgbPixel[]
@@ -72,7 +81,60 @@ namespace FaceDetection.DLibDotNet
             };
         }
 
-        public void Process(string[] inputFilenames)
+
+        private async Task<Array2D<RgbPixel>> LoadRotatedImage(string filename)
+        {
+            int rotation = 0;
+            double radiansRotation = 0d;
+            var result = await asyncExifTool.ExecuteAsync(new[] { "-Orientation", "-n", filename });
+            result = result.ToLower();
+            result = result.Replace("orientation", string.Empty);
+            result = result.Replace(":", string.Empty);
+            result = result.Trim();
+
+            if (!int.TryParse(result, NumberStyles.None, new NumberFormatInfo(), out var intResult))
+            {
+                return Dlib.LoadImage<RgbPixel>(filename);
+            }
+
+            switch (intResult)
+            {
+                case 1:
+                    rotation = 0;
+                    radiansRotation = 0;
+                    break;
+                case 3:
+                    rotation = 180;
+                    radiansRotation = Math.PI;
+                    break;
+                case 6:
+                    rotation = 90;
+                    radiansRotation = (1.5) * Math.PI;
+                    break;
+                case 8:
+                    rotation = 270;
+                    radiansRotation = (0.5) * Math.PI;
+                    break;
+                default:
+                    rotation = -1;
+                    break;
+            }
+
+            var origImg = Dlib.LoadImage<RgbPixel>(filename);
+
+            if (rotation == -1 || rotation == 0)
+                return origImg;
+
+            // load the image
+
+            var img = new Array2D<RgbPixel>();
+            Dlib.RotateImage(origImg, img, radiansRotation, InterpolationTypes.Bilinear);
+
+            origImg.Dispose();
+            return img;
+        }
+
+        public async Task ProcessAsync(string[] inputFilenames)
         {
             var chips = new List<Matrix<RgbPixel>>();
             var faces = new List<Rectangle>();
@@ -84,9 +146,12 @@ namespace FaceDetection.DLibDotNet
                     break;
 
                 // load the image
-                using var img = Dlib.LoadImage<RgbPixel>(inputFilename);
+                using var img = await LoadRotatedImage(inputFilename);
                 Dlib.SaveJpeg(img, inputFilename + "__1.jpg", 25);
                 Dlib.SaveJpeg(img, inputFilename + "__2.jpg", 25);
+
+                await asyncExifTool.ExecuteAsync(new string[] {"-all=", "-overwrite_original", inputFilename + "__1.jpg" });
+                await asyncExifTool.ExecuteAsync(new string[] {"-all=", "-overwrite_original", inputFilename + "__2.jpg" });
 
                 // detect all faces
                 foreach (var face in detector.Operator(img))
@@ -106,18 +171,26 @@ namespace FaceDetection.DLibDotNet
                 }
             }
 
-            // put each fae in a 128D embedding space
-            // similar faces will be placed close together
-            // Console.WriteLine("Recognizing faces...");
-            OutputLabels<Matrix<float>> descriptors = dnn.Operator(chips);
-
             var ffd = new FoundFacesData
             {
                 // Chips = chips,
                 Faces = faces,
                 Filenames = filename,
-                Descriptors = descriptors.ToList(),
             };
+
+            OutputLabels<Matrix<float>> descriptors = null;
+            if (chips.Any())
+            {
+                // put each fae in a 128D embedding space
+                // similar faces will be placed close together
+                // Console.WriteLine("Recognizing faces...");
+                descriptors = dnn.Operator(chips);
+                ffd.Descriptors = descriptors.ToList();
+            }
+            else
+            {
+                ffd.Descriptors = new List<Matrix<float>>(0);
+            }
 
             var dto = new FoundFacesDataDto
             {
@@ -225,8 +298,9 @@ namespace FaceDetection.DLibDotNet
         }
 
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
+            await asyncExifTool.DisposeAsync();
             dnn.Dispose();
             predictor.Dispose();
             detector.Dispose();

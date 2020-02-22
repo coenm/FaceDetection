@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System.Threading.Tasks;
 using FaceDetection.DLibDotNet;
 
 namespace FaceDetection.Console
@@ -12,9 +12,8 @@ namespace FaceDetection.Console
 
     public static class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-
             var identification = new DLibFaceIdentification();
 
             var algorithms = new List<IFaceDetection>
@@ -51,13 +50,16 @@ namespace FaceDetection.Console
             }
 
 
-            identification.Process(Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly));
+            await identification.ProcessAsync(Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly));
 
             foreach (var algo in algorithms)
             {
                 if (algo is IDisposable disposable)
                     disposable.Dispose();
             }
+
+            if (identification is IAsyncDisposable adis)
+                await adis.DisposeAsync();
 
             if (identification is IDisposable dis)
                 dis.Dispose();
