@@ -1,4 +1,6 @@
-﻿namespace FaceDetection.OpenCv
+﻿using System.Threading.Tasks;
+
+namespace FaceDetection.OpenCv
 {
     using System.Collections.Generic;
     using System.Linq;
@@ -18,7 +20,7 @@
 
         public string Name { get; } = "OpenCv-DNN-Caffe";
 
-        public int Process(string inputFilename, string outputDirectory)
+        public Task<int> ProcessAsync(string inputFilename, string outputDirectory)
         {
             if (!File.Exists(inputFilename))
                 throw new FileNotFoundException(nameof(inputFilename));
@@ -75,7 +77,7 @@
             //     Cv2.ImWrite(outputFilename, frame);
             // }
 
-            return orderedFaces.Count;
+            return Task.FromResult(orderedFaces.Count);
         }
     }
 }

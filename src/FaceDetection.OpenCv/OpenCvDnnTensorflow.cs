@@ -1,4 +1,6 @@
 ﻿
+using System.Threading.Tasks;
+
 namespace FaceDetection.OpenCv
 {
     using System.Collections.Generic;
@@ -19,7 +21,7 @@ namespace FaceDetection.OpenCv
 
         public string Name { get; } = "OpenCv-DNN-Tensorflow";
 
-        public int Process(string inputFilename, string outputDirectory)
+        public Task<int> ProcessAsync(string inputFilename, string outputDirectory)
         {
             if (!File.Exists(inputFilename))
                 throw new FileNotFoundException(nameof(inputFilename));
@@ -70,7 +72,7 @@ namespace FaceDetection.OpenCv
             //     Cv2.ImWrite(outputFilename, frame);
             // }
 
-            return faces.Count;
+            return Task.FromResult(faces.Count);
         }
     }
 }

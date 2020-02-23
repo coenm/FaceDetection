@@ -14,13 +14,14 @@ namespace FaceDetection.Console
     {
         public static async Task Main(string[] args)
         {
-            var identification = new DLibFaceIdentification();
+            await using var exiftoolService = new AsyncExifToolRotationService();
+            var identification = new DLibFaceIdentification(exiftoolService);
 
             var algorithms = new List<IFaceDetection>
             {
                 new OpenCvDnnCaffe(),
                 new OpenCvDnnTensorflow(),
-                new DLibHog(),
+                new DLibHog(exiftoolService),
             };
 
             var codebase = Assembly.GetEntryAssembly()?.GetName().CodeBase;
@@ -40,15 +41,16 @@ namespace FaceDetection.Console
             if (!Directory.Exists(inputDir))
                 return;
 
+            /*
             foreach (var img in Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly))
             {
-                // foreach (var algo in algorithms)
-                // {
-                //     var faceCount = algo.Process(img, outputDir);
-                //     System.Console.WriteLine($"{algo.Name} found {faceCount} faces");
-                // }
+                foreach (var algo in algorithms)
+                {
+                    var faceCount = await algo.ProcessAsync(img, outputDir);
+                    System.Console.WriteLine($"{algo.Name} found {faceCount} faces");
+                }
             }
-
+            */
 
             await identification.ProcessAsync(Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly));
 

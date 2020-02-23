@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Core
 {
@@ -6,6 +7,6 @@ namespace Core
     {
         string Name { get; }
 
-        int Process(string inputFilename, string outputDirectory);
+        Task<int> ProcessAsync(string inputFilename, string outputDirectory);
     }
 }
