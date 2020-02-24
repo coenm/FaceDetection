@@ -4,8 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Core;
+using Core.Persistence;
 using DlibDotNet;
 using DlibDotNet.Dnn;
+using FaceDetection.DLibDotNet.Helpers;
 using Newtonsoft.Json;
 
 namespace FaceDetection.DLibDotNet
@@ -15,21 +17,6 @@ namespace FaceDetection.DLibDotNet
         public List<Rectangle> Faces { get; set; }
         public List<string> Filenames { get; set; }
         public List<Matrix<float>> Descriptors { get; set; }
-    }
-
-    public class RectangleDto
-    {
-        public int Left { get; set; }
-        public int Top { get; set; }
-        public int Right { get; set; }
-        public int Bottom { get; set; }
-    }
-
-    public class RgbPixelDto
-    {
-        public byte R { get; set; }
-        public byte G { get; set; }
-        public byte B { get; set; }
     }
 
     public class FoundFacesDataDto
@@ -92,7 +79,7 @@ namespace FaceDetection.DLibDotNet
                     continue;
 
                 // load the image
-                using var img = await Helpers.LoadRotatedImage(imageRotationService, inputFilename);
+                using var img = await DlibHelpers.LoadRotatedImage(imageRotationService, inputFilename);
                 // Dlib.SaveJpeg(img, inputFilename + "__1.jpg", 25);
                 // Dlib.SaveJpeg(img, inputFilename + "__2.jpg", 25);
 
@@ -140,7 +127,7 @@ namespace FaceDetection.DLibDotNet
                 var dto = new FoundFacesDataDto
                 {
                     Faces = ffd.Faces
-                        .Select(f => new RectangleDto()
+                        .Select(f => new RectangleDto
                         {
                             Bottom = f.Bottom,
                             Left = f.Left,
@@ -232,7 +219,7 @@ namespace FaceDetection.DLibDotNet
 
                 if (!File.Exists(items.Filenames[i] + $"_x{labels2[i]}.jpg"))
                 {
-                    using var img2 = await Helpers.LoadRotatedImage(imageRotationService, items.Filenames[i]);
+                    using var img2 = await DlibHelpers.LoadRotatedImage(imageRotationService, items.Filenames[i]);
                     Dlib.SaveJpeg(img2, items.Filenames[i] + $"_x{labels2[i]}.jpg", 25);
                 }
 

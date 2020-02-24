@@ -1,8 +1,7 @@
-﻿
-using System.Threading.Tasks;
-
-namespace FaceDetection.OpenCv
+﻿namespace FaceDetection.OpenCv
 {
+    using System.Threading.Tasks;
+    using Core.Persistence;
     using System.Collections.Generic;
     using System.Linq;
     using System.IO;
@@ -21,7 +20,7 @@ namespace FaceDetection.OpenCv
 
         public string Name { get; } = "OpenCv-DNN-Tensorflow";
 
-        public Task<int> ProcessAsync(string inputFilename, string outputDirectory)
+        public async Task<IEnumerable<Face>> ProcessAsync(string inputFilename)
         {
             if (!File.Exists(inputFilename))
                 throw new FileNotFoundException(nameof(inputFilename));
@@ -56,13 +55,13 @@ namespace FaceDetection.OpenCv
             var origFilename = new FileInfo(inputFilename).Name;
 
             var faces = orderedFaces;
-            foreach (var face in faces)
-            {
-                FaceBoxer.Draw(frame, face.P1, face.P2, face.Confidence);
-            }
+            // foreach (var face in faces)
+            // {
+                // FaceBoxer.Draw(frame, face.P1, face.P2, face.Confidence);
+            // }
 
-            var outputFilename = Path.Combine(outputDirectory, $"{origFilename}_{Name}.jpg");
-            Cv2.ImWrite(outputFilename, frame);
+            // var outputFilename = Path.Combine(outputDirectory, $"{origFilename}_{Name}.jpg");
+            // Cv2.ImWrite(outputFilename, frame);
 
             // for (var i = 0; i < orderedList.Count; i++)
             // {
@@ -72,7 +71,19 @@ namespace FaceDetection.OpenCv
             //     Cv2.ImWrite(outputFilename, frame);
             // }
 
-            return Task.FromResult(faces.Count);
+            await Task.Yield();
+
+            return list.Select(x => new Face
+                {
+                    Position = new RectangleDto
+                    {
+                        Top = x.P1.Y,
+                        Right = x.P2.X,
+                        Left = x.P1.X,
+                        Bottom = x.P2.Y,
+                    }.ToRectangle(),
+                    Confidence = x.Confidence,
+                });
         }
     }
 }

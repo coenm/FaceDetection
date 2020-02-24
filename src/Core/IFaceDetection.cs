@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Core.Persistence;
 
 namespace Core
 {
@@ -7,6 +9,6 @@ namespace Core
     {
         string Name { get; }
 
-        Task<int> ProcessAsync(string inputFilename, string outputDirectory);
+        Task<IEnumerable<Face>> ProcessAsync(string inputFilename);
     }
 }

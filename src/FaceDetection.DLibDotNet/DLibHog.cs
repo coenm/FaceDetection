@@ -1,4 +1,9 @@
-﻿namespace FaceDetection.DLibDotNet
+﻿using System.Collections.Generic;
+using System.Linq;
+using Core.Persistence;
+using FaceDetection.DLibDotNet.Helpers;
+
+namespace FaceDetection.DLibDotNet
 {
     using System.Threading.Tasks;
     using JetBrains.Annotations;
@@ -21,12 +26,12 @@
 
         public string Name { get; } = "DLib-HOG-GetFrontalFaceDetector";
 
-        public async Task<int> ProcessAsync(string inputFilename, string outputDirectory)
+        public async Task<IEnumerable<Face>> ProcessAsync(string inputFilename)
         {
             if (!File.Exists(inputFilename))
                 throw new FileNotFoundException(nameof(inputFilename));
 
-            using var img = await Helpers.LoadRotatedImage(imageRotationService, inputFilename);
+            using var img = await DlibHelpers.LoadRotatedImage(imageRotationService, inputFilename);
             var faces = detector.Operator(img);
 
             foreach (var rect in faces)
@@ -34,12 +39,22 @@
                 Dlib.DrawRectangle(img, rect, new RgbPixel(0,255,0), 8U);
             }
 
-            var origFilename = new FileInfo(inputFilename).Name;
-            var outputFilename = Path.Combine(outputDirectory, $"{origFilename}_{Name}.jpg");
+            // var origFilename = new FileInfo(inputFilename).Name;
+            // var outputFilename = Path.Combine(outputDirectory, $"{origFilename}_{Name}.jpg");
 
-            Dlib.SaveJpeg(img, outputFilename, 25);
+            // Dlib.SaveJpeg(img, outputFilename, 25);
 
-            return faces.Length;
+            return faces.Select(x => new Face
+                {
+                    Position = new RectangleDto
+                    {
+                        Top = x.Top,
+                        Right = x.Right,
+                        Left = x.Left,
+                        Bottom = x.Bottom,
+                    }.ToRectangle(),
+                    Confidence = null
+                }).ToList();
         }
 
         public void Dispose()

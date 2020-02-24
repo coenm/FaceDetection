@@ -1,4 +1,6 @@
 ﻿using System.Threading.Tasks;
+using Core.Persistence;
+using FaceDetection.OpenCv.OpenCvHelpers;
 
 namespace FaceDetection.OpenCv
 {
@@ -20,7 +22,7 @@ namespace FaceDetection.OpenCv
 
         public string Name { get; } = "OpenCv-DNN-Caffe";
 
-        public Task<int> ProcessAsync(string inputFilename, string outputDirectory)
+        public async Task<IEnumerable<Face>> ProcessAsync(string inputFilename)
         {
             if (!File.Exists(inputFilename))
                 throw new FileNotFoundException(nameof(inputFilename));
@@ -57,17 +59,17 @@ namespace FaceDetection.OpenCv
                 list.Add(new ConfidenceBox(new Point(x1, y1), new Point(x2, y2), confidence));
             }
 
-            var orderedFaces = list.OrderByDescending(x => x.Confidence).Where(x => x.Confidence > 0.3).ToList();
-            var origFilename = new FileInfo(inputFilename).Name;
+            // var orderedFaces = list.OrderByDescending(x => x.Confidence).Where(x => x.Confidence > 0.3).ToList();
+            // var origFilename = new FileInfo(inputFilename).Name;
 
-            var faces = orderedFaces;
-            foreach (var face in faces)
-            {
-                FaceBoxer.Draw(frame, face.P1, face.P2, face.Confidence);
-            }
+            // var faces = orderedFaces;
+            // foreach (var face in faces)
+            // {
+            //     FaceBoxer.Draw(frame, face.P1, face.P2, face.Confidence);
+            // }
 
-            var outputFilename = Path.Combine(outputDirectory, $"{origFilename}_{Name}.jpg");
-            Cv2.ImWrite(outputFilename, frame);
+            // var outputFilename = Path.Combine(outputDirectory, $"{origFilename}_{Name}.jpg");
+            // Cv2.ImWrite(outputFilename, frame);
 
             // for (var i = 0; i < orderedList.Count; i++)
             // {
@@ -77,7 +79,20 @@ namespace FaceDetection.OpenCv
             //     Cv2.ImWrite(outputFilename, frame);
             // }
 
-            return Task.FromResult(orderedFaces.Count);
+            await Task.Yield();
+
+            return list.Select(x => new Face
+                {
+                    Position = new RectangleDto
+                    {
+                        Top = x.P1.Y,
+                        Right = x.P2.X,
+                        Left = x.P1.X,
+                        Bottom = x.P2.Y,
+                    }.ToRectangle(),
+                    Confidence = x.Confidence,
+                })
+                .ToList();
         }
     }
 }

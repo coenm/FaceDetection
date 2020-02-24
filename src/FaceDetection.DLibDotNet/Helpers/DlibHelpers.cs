@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using Core;
 using DlibDotNet;
 
-namespace FaceDetection.DLibDotNet
+namespace FaceDetection.DLibDotNet.Helpers
 {
-    internal static class Helpers
+    internal static class DlibHelpers
     {
         public static async Task<Array2D<RgbPixel>> LoadRotatedImage(IImageRotationService imageRotationService, string filename)
         {
