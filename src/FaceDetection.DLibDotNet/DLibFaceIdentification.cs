@@ -12,22 +12,6 @@ using Newtonsoft.Json;
 
 namespace FaceDetection.DLibDotNet
 {
-    public class FoundFacesData
-    {
-        public List<Rectangle> Faces { get; set; }
-        public List<string> Filenames { get; set; }
-        public List<Matrix<float>> Descriptors { get; set; }
-    }
-
-    public class FoundFacesDataDto
-    {
-        public List<RectangleDto> Faces { get; set; }
-
-        public List<string> Filenames { get; set; }
-
-        public List<MatrixFloatDto> Descriptors { get; set; }
-    }
-
     public class DLibFaceIdentification : IDisposable
     {
         private readonly IImageRotationService imageRotationService;
@@ -240,12 +224,5 @@ namespace FaceDetection.DLibDotNet
             predictor.Dispose();
             detector.Dispose();
         }
-    }
-
-    public class MatrixFloatDto
-    {
-        public float[] Data { get; set; }
-        public int Row { get; set; }
-        public int Columns { get; set; }
     }
 }

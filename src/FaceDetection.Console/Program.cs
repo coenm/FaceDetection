@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Core.Persistence;
@@ -13,12 +14,21 @@ namespace FaceDetection.Console
     using Core;
     using OpenCv;
 
+    public class FileFaceCombi
+    {
+        public string File { get; set; }
+        public Rectangle Face { get; set; }
+        public MatrixFloatDto Descriptor { get; set; }
+    }
+
     public static class Program
     {
         public static async Task Main(string[] args)
         {
             await using var exiftoolService = new AsyncExifToolRotationService();
             var identification = new DLibFaceIdentification(exiftoolService);
+
+            var identificationService = new DLibFaceIdentificationService(exiftoolService);
 
             var faceDrawer = new OpenCvDrawFaces();
 
@@ -46,6 +56,8 @@ namespace FaceDetection.Console
             var inputDir = Path.Combine(dir.FullName, "images");
             if (!Directory.Exists(inputDir))
                 return;
+
+            var combis = new List<FileFaceCombi>();
 
             foreach (var img in Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly))
             {
@@ -93,7 +105,15 @@ namespace FaceDetection.Console
                         }
 
                         if (union.HasValue)
+                        {
                             faceDrawer.Draw(outputFile, outputFile, Color.Aqua, new Face[]{ new Face { Position = union.Value }});
+
+                            combis.Add(new FileFaceCombi
+                                {
+                                    File = img,
+                                    Face = union.Value
+                                });
+                        }
                     }
 
                     if (faces1.Any())
@@ -104,10 +124,46 @@ namespace FaceDetection.Console
 
                     if (faces3.Any())
                         faceDrawer.Draw(outputFile, outputFile, Color.Green, faces3);
+
+                    var fileCombies = combis.Where(x => x.File == img).ToList();
+                    var faceDescriptors = await identificationService.GetFaceDescriptors(img, fileCombies.Select(x => x.Face).ToArray());
+
+                    for (var i = 0; i < faceDescriptors.Length; i++)
+                    {
+                        fileCombies[i].Descriptor = faceDescriptors[i];
+                    }
                 }
             }
 
-            // await identification.ProcessAsync(Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly));
+
+            var clusters = identificationService.ClusterFaces(combis.Select(x => x.Descriptor).ToArray());
+            for (int clusterIndex = 0; clusterIndex < clusters.Count; clusterIndex++)
+            {
+                var cluster = clusters[clusterIndex];
+
+                var outputDir1 = Path.Combine(dir.FullName, "Output", clusterIndex.ToString());
+                if (Directory.Exists(outputDir1) == false)
+                    Directory.CreateDirectory(outputDir1);
+
+                foreach (var clusterItem in cluster)
+                {
+                    var fa = combis[clusterItem].Face;
+                    var fi = new FileInfo(combis[clusterItem].File);
+
+                    var outputFilename = Path.Combine(outputDir1, fi.Name);
+                    if (!File.Exists(outputFilename))
+                        File.Copy(combis[clusterItem].File, outputFilename);
+
+                    faceDrawer.Draw(outputFilename, outputFilename, Color.Green, new[] { new Face
+                    {
+                        Position = fa,
+                    }});
+                }
+            }
+
+
+
+            await identification.ProcessAsync(Directory.GetFiles(inputDir, "*.jpg", SearchOption.TopDirectoryOnly));
 
             foreach (var algo in algorithms)
             {
