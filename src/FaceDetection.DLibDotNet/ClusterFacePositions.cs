@@ -33,7 +33,7 @@ namespace FaceDetection.DLibDotNet
             }
         }
 
-        public static List<Matches> Abc(List<System.Drawing.Rectangle> set1, List<System.Drawing.Rectangle> set2, List<System.Drawing.Rectangle> set3)
+        public static IEnumerable<Matches> ClusterFacesByPosition(List<System.Drawing.Rectangle> set1, List<System.Drawing.Rectangle> set2, List<System.Drawing.Rectangle> set3)
         {
             var totalset = set1.Concat(set2).Concat(set3).ToList();
 
@@ -56,11 +56,10 @@ namespace FaceDetection.DLibDotNet
                     unionSize -= intersectionSize;
                     var iou = (double)intersectionSize / (double)unionSize;
 
-                    if (iou > 0.7)
+                    if (iou > 0.45)
                         matches.Add(new SamplePair((uint)i, (uint)(j), 1 - iou));
                 }
             }
-
 
             for (var i = set1.Count; i < set1.Count + set2.Count; i++)
             {
@@ -76,7 +75,7 @@ namespace FaceDetection.DLibDotNet
                     unionSize -= intersectionSize;
                     var iou = (double)intersectionSize / (double)unionSize;
 
-                    if (iou > 0.7)
+                    if (iou > 0.45)
                         matches.Add(new SamplePair((uint)i, (uint)(j), 1 - iou));
                 }
             }
