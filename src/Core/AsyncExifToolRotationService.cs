@@ -9,10 +9,11 @@ namespace Core
 {
     public class AsyncExifToolRotationService : IImageRotationService, IAsyncDisposable
     {
-        private AsyncExifTool asyncExifTool;
+        private readonly AsyncExifTool asyncExifTool;
 
         public AsyncExifToolRotationService()
         {
+            // var logger = new ExifToolConsoleLogger();
             var configuration = new AsyncExifToolConfiguration("exiftool.exe", Encoding.UTF8, Environment.NewLine, new List<string>());
             asyncExifTool = new AsyncExifTool(configuration);
             asyncExifTool.Initialize();
@@ -21,6 +22,9 @@ namespace Core
         public async Task<int> GetImageRotationDegreesAsync(string filename)
         {
             var result = await asyncExifTool.ExecuteAsync(new[] { "-Orientation", "-n", filename });
+            if (result == null)
+                return 0;
+
             result = result.ToLower();
             result = result.Replace("orientation", string.Empty);
             result = result.Replace(":", string.Empty);

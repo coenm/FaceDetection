@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoenM.AsyncExifTool" Version="1.0.0" />
+    <PackageReference Include="CoenM.AsyncExifTool" Version="1.0.1-beta0001" />
   </ItemGroup>
 
 </Project>

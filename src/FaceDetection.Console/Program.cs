@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,6 +25,8 @@ namespace FaceDetection.Console
     {
         public static async Task Main(string[] args)
         {
+            var sw = Stopwatch.StartNew();
+
             await using var exiftoolService = new AsyncExifToolRotationService();
             var identification = new DLibFaceIdentification(exiftoolService);
 
@@ -178,6 +180,7 @@ namespace FaceDetection.Console
                 dis.Dispose();
 
             System.Console.WriteLine("Done");
+            Console.WriteLine($"Took {sw.Elapsed} seconds");
             System.Console.ReadLine();
         }
     }
