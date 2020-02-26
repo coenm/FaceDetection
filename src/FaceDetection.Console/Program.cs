@@ -137,13 +137,12 @@ namespace FaceDetection.Console
                 }
             }
 
-
             var clusters = identificationService.ClusterFaces(combis.Select(x => x.Descriptor).ToArray());
             for (int clusterIndex = 0; clusterIndex < clusters.Count; clusterIndex++)
             {
                 var cluster = clusters[clusterIndex];
 
-                var outputDir1 = Path.Combine(dir.FullName, "Output", clusterIndex.ToString());
+                var outputDir1 = Path.Combine(outputDir, clusterIndex.ToString());
                 if (Directory.Exists(outputDir1) == false)
                     Directory.CreateDirectory(outputDir1);
 
